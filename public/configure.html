@@ -7,38 +7,68 @@
   body{font-family:system-ui,sans-serif;background:#141320;color:#eee;max-width:640px;margin:auto;padding:20px}
   h1{font-size:1.4rem} label{display:block;margin:16px 0 6px;font-weight:600}
   select,textarea,input{width:100%;box-sizing:border-box;background:#211f33;color:#eee;border:1px solid #444;border-radius:8px;padding:10px;font:inherit}
-  textarea{height:240px;font-family:ui-monospace,monospace;font-size:12px}
+  input#site{font-size:1.05rem;padding:14px}
+  textarea{height:220px;font-family:ui-monospace,monospace;font-size:12px}
   button,a.btn{display:inline-block;margin:14px 8px 0 0;padding:10px 16px;border-radius:8px;border:0;background:#7b5cff;color:#fff;text-decoration:none;font-weight:600;cursor:pointer}
-  .muted{color:#999;font-size:.85rem} code{word-break:break-all}
+  button.ghost{background:#2c2a44}
+  details{margin-top:22px;border-top:1px solid #333;padding-top:10px} summary{cursor:pointer;color:#bbb}
+  .muted{color:#999;font-size:.85rem} code{word-break:break-all} #status{margin-top:12px;font-size:.9rem}
+  .ok{color:#7be38a} .bad{color:#ff8a8a}
 </style>
 </head>
 <body>
 <h1>AniSite addon</h1>
-<p class="muted">Pick a saved site preset, or paste a provider JSON to use any site. Reinstall to switch sites.</p>
+<p class="muted">Enter a website. The addon figures out search, episodes and video links on its own.</p>
 
-<label>Saved preset</label>
-<select id="preset"></select>
+<label for="site">Website</label>
+<input id="site" placeholder="https://example-site.tld" autocomplete="off">
+<label for="q" class="muted" style="font-weight:400">Test search (optional)</label>
+<input id="q" placeholder="a show name to test with">
 
-<label>…or custom provider JSON (overrides preset)</label>
-<textarea id="custom" placeholder='{"name": "...", "baseUrl": "...", "search": {...}, "show": {...}}'></textarea>
-
+<button id="test" class="ghost">Test site</button>
 <button id="go">Generate install link</button>
+<div id="status"></div>
 <div id="out"></div>
 
+<details>
+  <summary>Advanced: saved preset or manual JSON (for sites auto mode can't handle)</summary>
+  <label>Saved preset</label>
+  <select id="preset"><option value="">— none —</option></select>
+  <label>Provider JSON</label>
+  <textarea id="custom" placeholder='{"name": "...", "baseUrl": "...", "search": {...}, "show": {...}}'></textarea>
+</details>
+
 <script>
+const $ = (id) => document.getElementById(id);
 const b64url = (s) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-fetch('/presets.json').then(r=>r.json()).then(list=>{
-  const sel = document.getElementById('preset');
-  list.forEach(p => sel.add(new Option(p, p)));
-});
-document.getElementById('go').onclick = () => {
-  const raw = document.getElementById('custom').value.trim();
-  let cfg;
-  if (raw) {
-    try { cfg = { provider: JSON.parse(raw) }; } catch (e) { alert('Invalid JSON: ' + e.message); return; }
-  } else cfg = { preset: document.getElementById('preset').value };
+fetch('/presets.json').then(r=>r.json()).then(list => list.forEach(p => $('preset').add(new Option(p, p))));
+
+function config() {
+  const raw = $('custom').value.trim();
+  if (raw) return { provider: JSON.parse(raw) };
+  if ($('preset').value) return { preset: $('preset').value };
+  const site = $('site').value.trim();
+  if (!site) throw new Error('Enter a website first');
+  return { site };
+}
+
+$('test').onclick = async () => {
+  let cfg; try { cfg = config(); } catch (e) { $('status').innerHTML = `<span class="bad">${e.message}</span>`; return; }
+  const q = $('q').value.trim() || 'one';
+  $('status').textContent = 'Testing… (first search can take ~10s while the site is analysed)';
+  try {
+    const r = await fetch(`/${b64url(JSON.stringify(cfg))}/catalog/series/anisite-search/search=${encodeURIComponent(q)}.json`).then(r=>r.json());
+    const n = r.metas?.length || 0;
+    $('status').innerHTML = n
+      ? `<span class="ok">✓ Search works: ${n} results</span> — e.g. ${r.metas.slice(0,3).map(m=>m.name).join(', ')}`
+      : `<span class="bad">✗ No results. This site may load content with JavaScript; try the Advanced options.</span>`;
+  } catch (e) { $('status').innerHTML = `<span class="bad">Test failed: ${e.message}</span>`; }
+};
+
+$('go').onclick = () => {
+  let cfg; try { cfg = config(); } catch (e) { alert(e.message); return; }
   const path = `${location.host}/${b64url(JSON.stringify(cfg))}/manifest.json`;
-  document.getElementById('out').innerHTML =
+  $('out').innerHTML =
     `<a class="btn" href="stremio://${path}">Install in Stremio</a>
      <p class="muted">Or paste into Stremio's addon search box:</p><code>${location.protocol}//${path}</code>`;
 };

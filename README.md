@@ -23,6 +23,17 @@ Free on Vercel, which gives you an HTTPS address like `https://anisite-stremio-a
 Open `/configure` on that address, generate the link, and install it on your phone. Stremio syncs
 addons to your account, so it shows up on your TV automatically when you're signed in to the same account.
 
+## Auto mode (just enter a website)
+On `/configure`, type the site's address, tap **Test site**, then **Generate install link**.
+The addon works out the rest on its own:
+- **Search:** the site's OpenSearch descriptor, then its search `<form>`, then common URL patterns (`?keyword=`, `?q=`, `?s=`, `/search/…`)
+- **Results:** the biggest group of similar cards that have a link and an image
+- **Episodes:** the biggest group of similar links that look like episodes (`ep-3`, `?ep=3`, "Episode 3", `data-number`)
+- **Video:** direct `.m3u8`/`.mp4` links in the episode page and its player iframes
+
+Auto mode only works on sites that send their content as HTML. If a site builds its pages with
+JavaScript, the test shows no results. Use the Advanced section (manual JSON or a JS provider) for those.
+
 ## Switching sites
 - **Presets:** drop `providers/<name>.json` (or `.js`) in the folder. It appears in the configure dropdown.
 - **Ad-hoc:** paste the JSON straight into the configure page. No restart needed.

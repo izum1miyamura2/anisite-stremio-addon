@@ -32,7 +32,7 @@ function pick($, el, spec) {
   return v ? v.trim() : undefined;
 }
 
-const abs = (u, base) => { try { return u ? new URL(u, base).href : undefined; } catch { return undefined; } };
+export const abs = (u, base) => { try { return u ? new URL(u, base).href : undefined; } catch { return undefined; } };
 const fill = (tpl, vars) => tpl.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? '');
 
 export const b64 = {
@@ -82,11 +82,15 @@ export function jsonProvider(p) {
 
     async streams(episodeUrl) {
       const depth = p.stream?.iframeDepth ?? 2;
-      const found = new Map(); // url -> referer
-      await collect(episodeUrl, null, depth, found, p.stream?.iframe);
-      return [...found].map(([url, referer]) => ({ url, referer }));
+      return findStreams(episodeUrl, depth, p.stream?.iframe);
     },
   };
+}
+
+export async function findStreams(pageUrl, depth = 2, iframeSel) {
+  const found = new Map(); // url -> referer
+  await collect(pageUrl, null, depth, found, iframeSel);
+  return [...found].map(([url, referer]) => ({ url, referer }));
 }
 
 // Look for direct video URLs in a page, then follow iframes/embeds.

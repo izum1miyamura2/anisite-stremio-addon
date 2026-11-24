@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { jsonProvider, b64 } from './engine.js';
+import { autoProvider } from './auto.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const PROVIDERS = path.join(ROOT, 'providers');
@@ -19,6 +20,7 @@ function listPresets() {
 async function loadProvider(cfg) {
   // cfg: { preset: "name" } or { provider: { ...inline json... } }
   if (cfg?.provider) return jsonProvider(cfg.provider);
+  if (cfg?.site) return autoProvider(cfg.site);
   const name = cfg?.preset || process.env.DEFAULT_PRESET || listPresets()[0];
   if (!name || !/^[\w-]+$/.test(name)) throw new Error('No provider configured');
   const js = path.join(PROVIDERS, name + '.js');
@@ -54,7 +56,8 @@ const wrap = (fn) => async (req, res) => {
 };
 
 app.get(['/manifest.json', '/:config/manifest.json'], wrap(async (req, cfg) => {
-  const label = cfg.provider?.name || cfg.preset || 'not configured';
+  const host = cfg.site ? cfg.site.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0] : null;
+  const label = cfg.provider?.name || host || cfg.preset || 'not configured';
   return {
     id: 'community.anisite.' + b64.enc(label).slice(0, 16),
     version: '1.0.0',

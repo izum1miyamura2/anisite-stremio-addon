@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Stremio addon that streams anime from a website you choose (config-driven scraper)",
   "scripts": {
-    "test": "node test/smoke.js",
+    "test": "node test/smoke.js && node test/auto.js",
     "start": "node src/server.js"
   },
   "keywords": [
