@@ -1,0 +1,28 @@
+{
+  "name": "My Site",
+  "baseUrl": "https://example-site.tld",
+
+  "search": {
+    "url": "{base}/search?keyword={query}",
+    "item": ".film-list .item",
+    "title": ".name",
+    "link": "a@href",
+    "poster": "img@src"
+  },
+
+  "show": {
+    "title": "h1.title",
+    "poster": ".poster img@src",
+    "description": ".synopsis",
+    "episode": ".episode-list a",
+    "episodeLink": "@href",
+    "episodeNumber": "@data-number",
+    "episodeTitle": "@title",
+    "reverseEpisodes": false
+  },
+
+  "stream": {
+    "iframe": "iframe@src",
+    "iframeDepth": 2
+  }
+}

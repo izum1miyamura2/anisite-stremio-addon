@@ -1,0 +1,5 @@
+{
+  "framework": null,
+  "functions": { "api/index.js": { "includeFiles": "{providers,public}/**" } },
+  "rewrites": [{ "source": "/(.*)", "destination": "/api/index.js" }]
+}
